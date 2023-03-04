@@ -3,13 +3,8 @@ from utils import *
 
 
 @celery.task
-def process_user_request(file, model):
-  ext_flag = check_extention(file.filename)
-  if not ext_flag:
-    return unsupported_filetype_response()  
-
-  full_content = get_file_content(file)
-  full_content = transformer_summary(full_content)
+def process_user_request(text, model):
+  full_content = transformer_summary(text)
   full_content = full_content.replace("\n", ' ')
   
   key = generate_random_key()
@@ -34,5 +29,4 @@ def process_user_request(file, model):
     "titles": title_response,
     "key": key,
     "token_used": token_used})
-  
-  print("Sucess")
+  print("Success")

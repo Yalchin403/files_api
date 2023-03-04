@@ -31,6 +31,51 @@ model_dict = {
     'ada': 'text-ada-001',
 }
 
+valid_extensions = ['docx', 'txt', 'pdf', 'odt', 'doc']
+
+
+def check_extention(name):
+  return name.split('.')[-1] in valid_extensions
+
+
+def unsupported_filetype_response():
+  print("File does not have supported extension type.")
+  resp = jsonify(f"File does not have supported extension type. Supported extensions type are {', '.join(valid_extensions)}")
+  resp.status_code = 400
+  return resp
+
+
+def get_file_content(file):
+  ext = file.filename.split('.')[-1].lower()
+  if ext == 'txt':
+    content = file.read()
+    return content.decode('utf-8')
+  
+  if ext == 'pdf':
+    f_name = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(file.filename))
+    file.save(f_name)
+
+    content = []
+    reader = PdfReader(f_name)
+    for page in reader.pages:
+      content.append(page.extract_text())
+    os.remove(f_name)
+    return '\n'.join(content)
+  
+  if ext == 'docx' or ext == 'odt':
+    f_name = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(file.filename))
+    file.save(f_name)
+    text = textract.process(f_name)
+    text = text.decode("utf-8")
+    os.remove(f_name)
+    return text
+  
+  if ext == 'doc':
+    f_name = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    file.save(f_name)
+    result = subprocess.run(["antiword", f_name], stdout=subprocess.PIPE)
+    text = result.stdout.decode("utf-8")
+    return text
 
 @app.route('/tokens', methods=['POST'])
 def num_tokens():
@@ -59,8 +104,13 @@ def main():
   arg_model = request.form.get('model', 'davinci')
   model = model_dict[arg_model]
   
-  # process_user_request.delay(file, model)
-  # process_user_request.delay(1, 2)
+  ext_flag = check_extention(file.filename)
+  if not ext_flag:
+    return unsupported_filetype_response()  
+
+  full_content = get_file_content(file)
+
+  process_user_request.delay(full_content, model)
 
   resp = jsonify({"message": "Process queued"})
   resp.status_code = 200
