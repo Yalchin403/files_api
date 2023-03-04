@@ -110,7 +110,11 @@ def main():
 
   full_content = get_file_content(file)
 
-  process_user_request.delay(full_content, model)
+  celery.send_task(
+    "worker.process_user_request",
+    kwargs={"text": full_content, "model": model},
+  )      
+  # process_user_request.delay(full_content, model)
 
   resp = jsonify({"message": "Process queued"})
   resp.status_code = 200
