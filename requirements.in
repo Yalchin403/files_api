@@ -1,0 +1,9 @@
+flask
+openai
+textract
+PyPDF2
+nltk
+transformers
+Redis
+celery
+tensorflow
