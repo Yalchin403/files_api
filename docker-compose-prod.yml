@@ -16,7 +16,7 @@ services:
         source: .
         target: /app
     command: >
-      bash -c "flask --app new_api run --host=0.0.0.0 --port=3000"
+      bash -c "flask --app app run --host=0.0.0.0 --port=3000"
     depends_on:
       - redis
       - worker
@@ -25,11 +25,9 @@ services:
     build:
       context: ./
     image: madefire/chordtest
-    command: bash -c "celery -A worker.celery worker"
-    environment:
-      - BROKER_URL=redis://redis:6379/0
-      - RESULT_BACKEND=redis://redis:6379/0
-      - C_FORCE_ROOT=true
+    command: bash -c "celery -A src.worker.config.celery worker"
+    env_file:
+      - .envs/.env.prod
     volumes:
       - ./:/app/
     depends_on:

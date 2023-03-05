@@ -1,0 +1,34 @@
+version: '3.1'
+
+services:
+
+  redis:
+      image: "redis:latest"
+
+  web:
+    build:
+      context: ./
+    
+    ports:
+      - "3000:3000"
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+    command: >
+      bash -c "flask --app app run --host=0.0.0.0 --port=3000"
+    depends_on:
+      - redis
+      - worker
+    
+  worker:
+    build:
+      context: ./
+    image: madefire/chordtest
+    command: bash -c "celery -A src.worker.config.celery worker"
+    env_file:
+      - .envs/.env.prod
+    volumes:
+      - ./:/app/
+    depends_on:
+      - redis

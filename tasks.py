@@ -1,5 +1,5 @@
-from worker import celery
-from utils import *
+from src.worker.config import celery
+from src.utils.utils import *
 
 
 @celery.task
